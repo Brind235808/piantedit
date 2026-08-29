@@ -7,6 +7,7 @@ edition = "2021"
 
 [lib]
 name = "piantedit_lib"
+path = "src/main.rs"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
