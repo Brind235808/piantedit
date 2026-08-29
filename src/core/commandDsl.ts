@@ -1,0 +1,2 @@
+export type AiCommand = { op: string; args: Record<string, string | number | boolean> };
+export function parseCommand(input: string): AiCommand[] { return input.split(/[\n;]/).map(s=>s.trim()).filter(Boolean).map(line=>{ const [op,...tokens]=line.split(/\s+/); const args:AiCommand["args"]={}; for(const token of tokens){const [key,raw="true"]=token.split("="); args[key]=raw==="true"?true:raw==="false"?false:(raw!==""&&!Number.isNaN(Number(raw))?Number(raw):raw);} return {op:op.toLowerCase(),args}; }); }
