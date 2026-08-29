@@ -10,6 +10,17 @@ v0.2.0：加入纯 TypeScript 布局核心（网格排列、矩形模型）和�
 
 安装 Rust 后，在项目根目录运行 `npm install`，再运行 `npm run tauri dev`。后端命令目前包括 `save_project`（覆盖前自动写入 `.backup`）和 `inspect_file`；DDS 编解码将在后续接入 DirectXTex。
 
+### AI/CLI 批处理
+
+项目 JSON 可直接由命令控制：
+
+```bash
+npm run puzzle -- project.puzzle.json arr gap=0
+npm run puzzle -- project.puzzle.json check
+```
+
+每次修改前会在项目目录的 `.backup` 中创建备份；命令输出紧凑 JSON，便于 AI 读取。
+
 ## 开发
 
 ```bash
