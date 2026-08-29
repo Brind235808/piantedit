@@ -17,6 +17,7 @@ function App() {
   const [command, setCommand] = useState("");
   const [log, setLog] = useState<string[]>([]);
   const [positions, setPositions] = useState<Record<string, Rect>>({});
+  const [dragging, setDragging] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const projectInput = useRef<HTMLInputElement>(null);
   const placed = useMemo(() => assets.filter((a) => a.placed), [assets]);
@@ -38,6 +39,12 @@ function App() {
   function loadProject(file: File | undefined) {
     if (!file) return;
     file.text().then((text) => { const data = JSON.parse(text) as { assets?: Asset[]; positions?: Record<string, Rect> }; if (data.assets) setAssets(data.assets); if (data.positions) setPositions(data.positions); setLog((items) => ["✓ 项目已加载", ...items]); }).catch(() => setLog((items) => ["✕ 项目文件格式无效", ...items]));
+  }
+
+  function moveAsset(id: string, dx: number, dy: number) {
+    const current = positions[id] ?? { x: 16, y: 16, width: 128, height: 128 };
+    const next = { ...current, x: Math.max(0, Math.min(432, current.x + dx)), y: Math.max(0, Math.min(432, current.y + dy)) };
+    setPositions((old) => ({ ...old, [id]: next }));
   }
 
   async function exportPng() {
@@ -72,7 +79,7 @@ function App() {
     <header><div className="brand">Piant<span>Edit</span></div><div className="toolbar"><button onClick={() => { setAssets([]); setPositions({}); }}>新建</button><button onClick={() => fileInput.current?.click()}>导入</button><input ref={fileInput} hidden type="file" multiple accept=".png,.dds" onChange={(e) => importFiles(e.target.files)} /><button onClick={() => projectInput.current?.click()}>打开项目</button><input ref={projectInput} hidden type="file" accept=".json,.puzzle" onChange={(e) => loadProject(e.target.files?.[0])} /><button onClick={saveProject}>保存</button><button>撤销</button><button>重做</button><button className="primary" onClick={exportPng}>导出 PNG</button></div></header>
     <section className="workspace">
       <aside className="panel assets"><div className="panel-title">素材区 <small>{assets.length}</small></div><div className="dropzone" onClick={() => fileInput.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); importFiles(e.dataTransfer.files); }}>拖入 PNG / DDS 文件<br/><span>或点击导入</span></div>{assets.map((a) => <div className={`asset ${a.placed ? "placed" : ""}`} key={a.id}><div className="thumb">{a.preview ? <img src={a.preview} alt="" /> : a.format}</div><div><strong>{a.name}</strong><small>{a.size} · {a.placed ? "已放置" : "待操作"}</small></div></div>)}</aside>
-      <section className="canvas-area"><div className="canvas-toolbar"><span>画布 4096 × 4096</span><span>吸附 <b>开</b>　防重叠 <b>开</b></span><span>缩放 100%</span></div><div className="stage"><div className="canvas"><div className="guide horizontal" /><div className="guide vertical" />{placed.map((a, i) => { const r=positions[a.id] ?? {x:32+(i%3)*150,y:32+Math.floor(i/3)*150,width:128,height:128}; return <div className="tile" style={{left:r.x,top:r.y}} key={a.id}>{a.name.split(".")[0]}</div>; })}</div></div></section>
+      <section className="canvas-area"><div className="canvas-toolbar"><span>画布 4096 × 4096</span><span>吸附 <b>开</b>　防重叠 <b>开</b></span><span>缩放 100%</span></div><div className="stage"><div className="canvas"><div className="guide horizontal" /><div className="guide vertical" />{placed.map((a, i) => { const r=positions[a.id] ?? {x:32+(i%3)*150,y:32+Math.floor(i/3)*150,width:128,height:128}; return <div className={`tile ${dragging===a.id?"dragging":""}`} style={{left:r.x,top:r.y}} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setDragging(a.id); }} onPointerMove={(e) => dragging===a.id && moveAsset(a.id,e.movementX,e.movementY)} onPointerUp={() => setDragging(null)} key={a.id}>{a.name.split(".")[0]}</div>; })}</div></div></section>
       <aside className="panel inspector"><div className="panel-title">AI 操作助手</div><div className="ai-hint">输入自然语言，AI 会生成批量操作计划。</div><div className="ai-log">{log.length ? log.map((l, i) => <div key={i}>{l}</div>) : <div className="empty">例如：把所有未放置的 512×512 图片按网格排列，不能重叠。</div>}</div><div className="command"><input value={command} onChange={(e) => setCommand(e.target.value)} onKeyDown={(e) => e.key === "Enter" && runCommand()} placeholder="让 AI 批量处理…" /><button onClick={runCommand}>执行</button></div><div className="section-title">当前选择</div><div className="property">对象　{placed.length ? `${placed.length} 个` : "无"}<br/>画布　4096 × 4096<br/>状态　<span className="ok">无重叠 · 无越界</span></div></aside>
     </section>
     <footer><span>就绪 · 已自动备份</span><span>项目版本 v0.3.0</span></footer>
