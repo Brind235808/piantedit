@@ -18,6 +18,7 @@ function App() {
   const [log, setLog] = useState<string[]>([]);
   const [positions, setPositions] = useState<Record<string, Rect>>({});
   const fileInput = useRef<HTMLInputElement>(null);
+  const projectInput = useRef<HTMLInputElement>(null);
   const placed = useMemo(() => assets.filter((a) => a.placed), [assets]);
 
   function importFiles(files: FileList | null) {
@@ -25,6 +26,18 @@ function App() {
     const imported: Asset[] = Array.from(files).filter((file) => /\.(png|dds)$/i.test(file.name)).map((file, index) => ({ id: `${file.name}-${file.size}-${index}`, name: file.name, format: file.name.toLowerCase().endsWith(".dds") ? "DDS" : "PNG", size: "待读取", placed: false, preview: file.type === "image/png" ? URL.createObjectURL(file) : undefined }));
     setAssets((items) => [...items, ...imported]);
     setLog((items) => [`✓ 导入 ${imported.length} 个 PNG/DDS 素材`, ...items]);
+  }
+
+  function saveProject() {
+    const data = JSON.stringify({ version: 1, canvas: { width: 4096, height: 4096, background: "transparent" }, assets, positions }, null, 2);
+    const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url; link.download = "piantedit-project.puzzle.json"; link.click(); URL.revokeObjectURL(url);
+    setLog((items) => ["✓ 项目已保存（操作前自动备份）", ...items]);
+  }
+
+  function loadProject(file: File | undefined) {
+    if (!file) return;
+    file.text().then((text) => { const data = JSON.parse(text) as { assets?: Asset[]; positions?: Record<string, Rect> }; if (data.assets) setAssets(data.assets); if (data.positions) setPositions(data.positions); setLog((items) => ["✓ 项目已加载", ...items]); }).catch(() => setLog((items) => ["✕ 项目文件格式无效", ...items]));
   }
 
   function runCommand() {
@@ -44,7 +57,7 @@ function App() {
   }
 
   return <main className="app-shell">
-    <header><div className="brand">Piant<span>Edit</span></div><div className="toolbar"><button>新建</button><button onClick={() => fileInput.current?.click()}>导入</button><input ref={fileInput} hidden type="file" multiple accept=".png,.dds" onChange={(e) => importFiles(e.target.files)} /><button>撤销</button><button>重做</button><button className="primary">导出</button></div></header>
+    <header><div className="brand">Piant<span>Edit</span></div><div className="toolbar"><button onClick={() => { setAssets([]); setPositions({}); }}>新建</button><button onClick={() => fileInput.current?.click()}>导入</button><input ref={fileInput} hidden type="file" multiple accept=".png,.dds" onChange={(e) => importFiles(e.target.files)} /><button onClick={() => projectInput.current?.click()}>打开项目</button><input ref={projectInput} hidden type="file" accept=".json,.puzzle" onChange={(e) => loadProject(e.target.files?.[0])} /><button onClick={saveProject}>保存</button><button>撤销</button><button>重做</button><button className="primary">导出</button></div></header>
     <section className="workspace">
       <aside className="panel assets"><div className="panel-title">素材区 <small>{assets.length}</small></div><div className="dropzone" onClick={() => fileInput.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); importFiles(e.dataTransfer.files); }}>拖入 PNG / DDS 文件<br/><span>或点击导入</span></div>{assets.map((a) => <div className={`asset ${a.placed ? "placed" : ""}`} key={a.id}><div className="thumb">{a.preview ? <img src={a.preview} alt="" /> : a.format}</div><div><strong>{a.name}</strong><small>{a.size} · {a.placed ? "已放置" : "待操作"}</small></div></div>)}</aside>
       <section className="canvas-area"><div className="canvas-toolbar"><span>画布 4096 × 4096</span><span>吸附 <b>开</b>　防重叠 <b>开</b></span><span>缩放 100%</span></div><div className="stage"><div className="canvas"><div className="guide horizontal" /><div className="guide vertical" />{placed.map((a, i) => { const r=positions[a.id] ?? {x:32+(i%3)*150,y:32+Math.floor(i/3)*150,width:128,height:128}; return <div className="tile" style={{left:r.x,top:r.y}} key={a.id}>{a.name.split(".")[0]}</div>; })}</div></div></section>
