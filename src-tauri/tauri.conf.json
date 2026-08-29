@@ -5,5 +5,5 @@
   "identifier": "com.piantedit.app",
   "build": { "beforeDevCommand": "npm run dev", "devUrl": "http://localhost:5173", "frontendDist": "../dist" },
   "app": { "windows": [{ "title": "PiantEdit", "width": 1440, "height": 900, "minWidth": 1024, "minHeight": 700 }], "security": { "csp": null } },
-  "bundle": { "active": true, "targets": "all", "icon": [] }
+  "bundle": { "active": false, "targets": "all", "icon": [] }
 }
