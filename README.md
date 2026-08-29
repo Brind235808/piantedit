@@ -4,7 +4,11 @@
 
 ## 当前状态
 
-v0.2.0：加入纯 TypeScript 布局核心（网格排列、矩形模型）和紧凑 AI 命令 DSL 解析器，为 Tauri/Rust 接入做准备。
+v0.2.0：加入纯 TypeScript 布局核心（网格排列、矩形模型）和紧凑 AI 命令 DSL 解析器，并接入 Tauri/Rust 后端骨架、项目保存前自动备份和文件检查命令。
+
+### Tauri 后端
+
+安装 Rust 后，在项目根目录运行 `npm install`，再运行 `npm run tauri dev`。后端命令目前包括 `save_project`（覆盖前自动写入 `.backup`）和 `inspect_file`；DDS 编解码将在后续接入 DirectXTex。
 
 ## 开发
 
